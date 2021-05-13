@@ -1,0 +1,9 @@
+MultipleTetranacci(5-40 by steps of 5):
+1
+29
+773
+20569
+547337
+14564533
+387559437
+Time: 6559481300 ns.
