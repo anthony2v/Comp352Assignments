@@ -5,67 +5,54 @@
 
 package foundation;
 
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.TreeMap;
+import java.sql.Array;
+import java.util.*;
 
 public class SmartAR {
     private int size, threshold, keyLength, maxKeyLength = 6;
-    private LinkedList<Car> carList;
-    private TreeMap<String, Car> carMap;
+    private ArrayList<SmartAREntry<String, Car>> carList;
+    private TreeMap<String, SmartAREntry<String, Car>> carMap;
 
     public SmartAR(){
         size = 0;
         threshold = 100;
         keyLength = 6;
-        carList = new Sequence<>();
-        Object[] buckets = new Object[43];
-        carMap = new SortedMap<>();
+        carList = new ArrayList<>();
+        carMap = new TreeMap<>();
     }
     public int size(){
-        return size;
+        if (overThreshold())
+            return carMap.size();
+        return carList.size();
     }
+
     public boolean isEmpty(){
+        if (overThreshold())
+            return carMap.isEmpty();
         return carList.isEmpty();
     }
-    public Position<Entry<String, Car>> getPosition(String key){
-    	if(!overThreshold()) {
-	        for(Position<Entry<String, Car>> position: carList.positions()){
-	            if(position.getElement().getKey().equals(key))
-	                return position;
-	        }
-    	}
-    	else {
-    		System.out.println("Operation not supported for maps.");
-    	}
+
+    public SmartAREntry<String, Car> getSmartAREntry(String key) {
+    	if(overThreshold())
+            return carMap.get(key);
+        for (SmartAREntry<String, Car> entry : carList) {
+            if (entry.getKey().equals(key)) {
+                return entry;
+            }
+        }
         return null;
     }
-    public Entry<String, Car> getElement(String key){
-    	Iterator<Entry<String, Car>> iterator = null;
-    	Entry<String, Car> answer = null;
-    	if(!overThreshold()) {
-	        iterator = carList.elements();
-	        while(iterator.hasNext()) {
-	            answer = iterator.next();
-	            if(answer.getKey().equals(key)){
-	                return answer;
-	            }
-	        }
-    	}
-    	else {
-    		return carMap.get(key);
-    	}
-        return null;
-    }
-    public void setThreshold(int newThreshold){
-        threshold = newThreshold;
+
+    public void setThreshold(int threshold){
+        this.threshold = threshold;
         checkThreshold();
     }
+
     public void setKeyLength(int length) {
-        if(length > maxKeyLength)
+        if (length >= 6 && length <= 12)
             maxKeyLength = length;
-        keyLength = length;
     }
+
     public void generate(int numberOfKeys) {
         String alphaNumeric = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
         StringBuilder key = new StringBuilder();
@@ -73,55 +60,50 @@ public class SmartAR {
             for(int j = 0; j <= keyLength; j++){
                 key.append(alphaNumeric.charAt((int)(Math.random() * alphaNumeric.length())));
             }
-            if(getElement(key.toString()) != null)
+            if(getSmartAREntry(key.toString()) != null)
                 i--;
             else
-                add(key.toString(), new Car());
+                add(key.toString(), new Car("SUV", "Cadillac"));
             key.setLength(0);
         }
     }
-    public Sequence<String> allKeys(){
-    	Sequence<String> keySet = new Sequence<>();
+
+    public String[] allKeys(){
     	if(overThreshold()) {
-    		for(String key: carMap.keySet())
-    			keySet.addLast(key);
+    		return (String[])carMap.keySet().toArray();
     	}
-    	else {
-    	    insertionSort();
-	        Iterator<Entry<String, Car>> entryIterator = carList.elements();
-	        while(entryIterator.hasNext()){
-	            keySet.addLast(entryIterator.next().getKey());
-	        }
-    	}
-        return keySet;
+        String[] keySet = (String[])carList.toArray();
+    	Arrays.sort(keySet);
+    	return keySet;
     }
-    public Entry<String, Car> add(String key, Car value){
-        Entry<String, Car> entry = getElement(key);
+
+    public SmartAREntry<String, Car> add(String key, Car value){
+        SmartAREntry<String, Car> smartAREntry = getSmartAREntry(key);
         if(overThreshold()) {
-            carMap.put(key, value);
+            carMap.put(key, new SmartAREntry<>(key, value));
             size = carMap.size();
         }
         else {
-            if (entry == null) {               // if new key, increase size and add to data structure
-                carList.addLast(new Entry<>(key, value));
+            if (smartAREntry == null) {               // if new key, increase size and add to data structure
+                carList.addLast(new SmartAREntry<>(key, value));
                 size++;
                 checkThreshold();
             } else {
-                entry.setValue(value);
+                smartAREntry.setValue(value);
             }
         }
         if(key.length() > maxKeyLength)
             maxKeyLength = key.length();
-        return entry;
+        return smartAREntry;
     }
     public void remove(String key){
-    	Entry<String, Car> answer;
+    	SmartAREntry<String, Car> answer;
     	if(overThreshold()) {
     		size--;
     		carMap.remove(key);
     	}
     	else {
-	        Iterator<Entry<String, Car>> iterator = carList.elements();
+	        Iterator<SmartAREntry<String, Car>> iterator = carList.elements();
 	        while(iterator.hasNext()) {
 	            answer = iterator.next();
 	            if(answer.getKey().equals(key)){
@@ -132,18 +114,18 @@ public class SmartAR {
     	}
     }
     public Car getValues(String key){
-    	Entry<String, Car> entry;
+    	SmartAREntry<String, Car> smartAREntry;
     	if(overThreshold())
     		return carMap.get(key);
     	else {
-    		entry = getElement(key);
-            if(entry == null)
+    		smartAREntry = getSmartAREntry(key);
+            if(smartAREntry == null)
                 return null;
     	}
-        return entry.getValue();
+        return smartAREntry.getValue();
     }
-    public Entry<String, Car> nextKey(String key){
-    	Position<Entry<String, Car>> entry;
+    public SmartAREntry<String, Car> nextKey(String key){
+    	Position<SmartAREntry<String, Car>> entry;
     	if(overThreshold())
     		return carMap.higherEntry(key);
 		else {
@@ -151,8 +133,8 @@ public class SmartAR {
 			return carList.after(entry).getElement();
 		}
     }
-    public Entry<String, Car> prevKey(String key){
-        Position<Entry<String, Car>> entry;
+    public SmartAREntry<String, Car> prevKey(String key){
+        Position<SmartAREntry<String, Car>> entry;
         if(overThreshold())
         	return carMap.lowerEntry(key);
         else {
@@ -160,53 +142,34 @@ public class SmartAR {
         	return carList.before(entry).getElement();
         }
     }
-    public Sequence<Car> previousCars(String key){
-        Entry<String, Car> entry = getElement(key);
-        if(entry != null)
-            return entry.getHistory();
+    public LinkedList<Car> previousCars(String key){
+        SmartAREntry<String, Car> smartAREntry = getSmartAREntry(key);
+        if(smartAREntry != null)
+            return smartAREntry.getHistory();
         return null;
     }
-    public boolean overThreshold() {
-    	if(size > threshold)
-    		return true;
-    	return false;
+
+    // -------------------------- Helper Methods --------------------------
+    private boolean overThreshold() {
+        return size > threshold;
     }
-    public void checkThreshold() {
+    private void checkThreshold() {
     	if(overThreshold() && carMap.isEmpty())
     		toMap(carList.elements());
     	else if(!overThreshold() && carList.isEmpty())
     		toSequence(carMap.entrySet());
     }
-    public void toSequence(Iterable<Entry<String, Car>> positions) {
-    	carList = new Sequence<>();
-    	for(Entry<String, Car> element: positions)
+    public void toLinkedList() {
+    	carList = new LinkedList<>();
+    	for(SmartAREntry<String, Car> element: positions)
     		carList.addLast(element);
     	carMap = null;                 // to help garbage collection
     }
-    public void toMap(Iterator<Entry<String, Car>> elements) {
-    	carMap = new SortedMap<>();
+    public void toMap(Iterator<SmartAREntry<String, Car>> elements) {
+    	carMap = new TreeMap<>();
 		while(elements.hasNext()){
     		carMap.put(elements.next());
 		}
 		carList = null;                // to help garbage collection
-    }
-    public void insertionSort(){
-        DefaultComparator comp = new DefaultComparator();
-        if(!overThreshold()){
-            Position<Entry<String,Car>> cursor = carList.first();
-            while(cursor != carList.peekLast()) {
-                Position<Entry<String, Car>> mid = carList.after(cursor);
-                Entry<String, Car> element = mid.getElement();
-                if(comp.compare(element.getKey(), mid.getElement().getKey()) > 0)
-                    cursor = mid;
-                else{
-                    Position<Entry<String,Car>> position = cursor;
-                    while(cursor != carList.first() && comp.compare(carList.before(cursor).getElement().getKey(), element.getKey()) > 0)
-                        cursor = carList.before(cursor);
-                    carList.remove(mid);
-                    carList.addBefore(cursor, element);
-                }
-            }
-        }
     }
 }

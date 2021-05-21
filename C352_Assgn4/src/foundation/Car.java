@@ -1,15 +1,18 @@
+/**
+ *
+ */
+
 package foundation;
 
 public class Car {
-    private String classification, key, make;
+    private String classification, make;
 
     private Car() {
         // purposefully left empty
     }
 
-    public Car(String classification, String key, String make) {
+    public Car(String classification, String make) {
         this.classification = classification;
-        this.key = key;
         this.make = make;
     }
 
@@ -17,15 +20,19 @@ public class Car {
         return classification;
     }
 
-    public String getKey() {
-        return key;
-    }
-
     public String getMake() {
         return make;
     }
 
+    public void setClassification(String classification) {
+        this.classification = classification;
+    }
+
+    public void setMake(String make) {
+        this.make = make;
+    }
+
     public String toString(){
-        return String.format("%s: %s %s", key , make, classification);
+        return String.format("%s %s" , make, classification);
     }
 }
